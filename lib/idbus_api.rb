@@ -4,9 +4,9 @@ $LOAD_PATH.unshift(File.dirname(__FILE__)) unless
 require 'rubygems'
 require 'json'
 
-require 'idbus_api/errors'
+require 'api'
+
 require 'idbus_api/default'
-require 'idbus_api/configurable'
 require 'idbus_api/client'
 #require 'idbus_api/base'
 #require 'idbus_api/stop'
@@ -18,7 +18,8 @@ require 'idbus_api/version'
 module IdbusApi
 
   class << self
-    include IdbusApi::Configurable
+
+    include Api::Configurable
 
     # API client based on configured options {Configurable}
     #
@@ -30,7 +31,7 @@ module IdbusApi
 
     private
 
-    def respond_to_missing?(method_name, include_private=false)
+    def respond_to_missing?(method_name, include_private = false)
       client.respond_to?(method_name, include_private)
     end
 

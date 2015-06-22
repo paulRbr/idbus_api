@@ -16,7 +16,7 @@ describe IdbusApi::Client do
     before do
       IdbusApi.reset!
       IdbusApi.configure do |config|
-        IdbusApi::Configurable.keys.each do |key|
+        Api::Configurable.keys.each do |key|
           config.send("#{key}=", "Some #{key}")
         end
       end
@@ -27,8 +27,8 @@ describe IdbusApi::Client do
     end
 
     it "inherits the module configuration" do
-      client = IdbusApi::Client.new
-      IdbusApi::Configurable.keys.each do |key|
+      client = IdbusApi.client
+      Api::Configurable.keys.each do |key|
         expect(client.instance_variable_get(:"@#{key}")).to eq("Some #{key}")
       end
     end
@@ -61,7 +61,7 @@ describe IdbusApi::Client do
      it "masks tokens on inspect" do
         client = IdbusApi::Client.new(:access_token => 'token123')
         inspected = client.inspect
-        expect(inspected).not_to include("tokent123")
+        expect(inspected).not_to include("token123")
       end
     end
   end
@@ -99,10 +99,11 @@ describe IdbusApi::Client do
       it "makes authenticated calls" do
         client = token_client
 
-        root_request = stub_get("/").
-          with(:headers => {:authorization => "token #{test_token}"})
-        client.get("/")
-        assert_requested root_request
+        stops_request = stub_get("/stops")
+          .with(:headers => { :authorization => "Token #{test_token}" })
+          .and_return(:status => 200)
+        client.get("/stops")
+        assert_requested stops_request
       end
     end
   end
@@ -124,8 +125,9 @@ describe IdbusApi::Client do
     it "fetches the API root" do
       IdbusApi.reset!
       VCR.use_cassette 'root' do
-        root = IdbusApi.client.root
-        expect(root).to match("This document describes the official iDBUS API")
+        expect {
+          IdbusApi.client.root
+        }.to raise_error(Api::NotFound)
       end
     end
  end
@@ -137,9 +139,9 @@ describe IdbusApi::Client do
 
     it "caches the last agent response" do
       IdbusApi.reset!
-      client = IdbusApi.client
+      client = token_client
       expect(client.last_response).to be_nil
-      client.get "/"
+      client.get "/stops"
       expect(client.last_response.status).to eq(200)
     end
   end # .last_response
@@ -149,13 +151,13 @@ describe IdbusApi::Client do
       IdbusApi.reset!
     end
     it "handles query params" do
-      IdbusApi.get "/", :foo => "bar"
-      assert_requested :get, "https://api.idbus.com?foo=bar"
+      token_client.get "/stops", :foo => "bar"
+      assert_requested :get, "https://api.idbus.com/v1/stops?foo=bar"
     end
     it "handles headers" do
-      request = stub_get("/zen").
+      request = stub_get("/stops").
         with(:query => {:foo => "bar"}, :headers => {:accept => "text/plain"})
-      IdbusApi.get "/zen", :foo => "bar", :accept => "text/plain"
+      token_client.get "/stops", :foo => "bar", :accept => "text/plain"
       assert_requested request
     end
   end # .get
@@ -163,81 +165,24 @@ describe IdbusApi::Client do
   describe "when making requests" do
     before do
       IdbusApi.reset!
-      @client = IdbusApi.client
+      @client = token_client
     end
     it "sets a default user agent" do
-      root_request = stub_get("/").
+      root_request = stub_get("/stops").
         with(:headers => {:user_agent => IdbusApi::Default.user_agent})
-      @client.get "/"
+      @client.get "/stops"
       assert_requested root_request
       expect(@client.last_response.status).to eq(200)
     end
     it "sets a custom user agent" do
       user_agent = "Mozilla/5.0 I am Spartacus!"
-      root_request = stub_get("/").
+      root_request = stub_get("/stops").
         with(:headers => {:user_agent => user_agent})
-      client = IdbusApi::Client.new(:user_agent => user_agent)
-      client.get "/"
+      client = token_client
+      client.user_agent = user_agent
+      client.get "/stops"
       assert_requested root_request
       expect(client.last_response.status).to eq(200)
-    end
-  end
-
-  describe "redirect handling" do
-    it "follows redirect for 301 response" do
-      client = token_client
-
-      original_request = stub_get("/foo").
-        to_return(:status => 301, :headers => { "Location" => "/bar" })
-      redirect_request = stub_get("/bar").to_return(:status => 200)
-
-      client.get("/foo")
-      assert_requested original_request
-      assert_requested redirect_request
-    end
-
-    it "follows redirect for 302 response" do
-      client = token_client
-
-      original_request = stub_get("/foo").
-        to_return(:status => 302, :headers => { "Location" => "/bar" })
-      redirect_request = stub_get("/bar").to_return(:status => 200)
-
-      client.get("/foo")
-      assert_requested original_request
-      assert_requested redirect_request
-    end
-
-    it "keeps authentication info when redirecting to the same host" do
-      client = token_client
-
-      original_request = stub_get("/foo").
-        with(:headers => {"Authorization" => "token #{test_token}"}).
-        to_return(:status => 301, :headers => { "Location" => "/bar" })
-      redirect_request = stub_get("/bar").
-        with(:headers => {"Authorization" => "token #{test_token}"}).
-        to_return(:status => 200)
-
-      client.get("/foo")
-      assert_requested original_request
-      assert_requested redirect_request
-    end
-
-    it "drops authentication info when redirecting to a different host" do
-      client = token_client
-
-      original_request = stub_request(:get, idbus_url("/foo")).
-        with(:headers => {"Authorization" => "token #{test_token}"}).
-        to_return(:status => 301, :headers => { "Location" => "https://example.com/bar" })
-      redirect_request = stub_request(:get, "https://example.com/bar").
-        to_return(:status => 200)
-
-      client.get("/foo")
-
-      assert_requested original_request
-      assert_requested(:get, "https://example.com/bar") { |req|
-        req.headers["Authorization"].nil?
-      }
     end
   end
 
@@ -253,12 +198,17 @@ describe IdbusApi::Client do
 
     it "raises on 404" do
       stub_get('/booya').to_return(:status => 404)
-      expect { IdbusApi.get('/booya') }.to raise_error IdbusApi::NotFound
+      expect { IdbusApi.get('/booya') }.to raise_error Api::NotFound
+    end
+
+    it "raises on 401" do
+      stub_get('/forbidden').to_return(:status => 401)
+      expect { IdbusApi.get('/forbidden') }.to raise_error Api::Unauthorized
     end
 
     it "raises on 500" do
       stub_get('/boom').to_return(:status => 500)
-      expect { IdbusApi.get('/boom') }.to raise_error IdbusApi::InternalServerError
+      expect { IdbusApi.get('/boom') }.to raise_error Api::InternalServerError
     end
   end
 end

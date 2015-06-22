@@ -19,9 +19,7 @@ Gem::Specification.new do |s|
   s.executables   = `git ls-files -- bin/*`.split("\n").map { |f| File.basename(f) }
   s.require_paths = ['lib']
 
-  s.add_dependency 'hashie'
-  s.add_dependency 'faraday'
-  s.add_dependency 'sawyer'
+  s.add_dependency 'api'
 
   s.add_development_dependency 'rake'
   s.add_development_dependency 'rspec'

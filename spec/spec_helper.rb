@@ -32,7 +32,7 @@ end
 def idbus_url(url)
   return url if url =~ /^http/
 
-  url = File.join(IdbusApi.api_endpoint, url)
+  url = File.join(IdbusApi.api_endpoint, IdbusApi.api_version, url)
   uri = Addressable::URI.parse(url)
 
   uri.to_s

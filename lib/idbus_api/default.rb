@@ -1,4 +1,4 @@
-require 'idbus_api/response/raise_error'
+require "api/default_options"
 
 module IdbusApi
 
@@ -16,16 +16,18 @@ module IdbusApi
 
     class << self
 
-      # Configuration options
-      # @return [Hash]
-      def options
-        Hash[IdbusApi::Configurable.keys.map{|key| [key, send(key)]}]
-      end
+      include Api::DefaultOptions
 
       # Default access token from ENV
       # @return [String]
       def access_token
         ENV['IDBUS_ACCESS_TOKEN']
+      end
+
+      # Default access token prefix
+      # @return [String]
+      def access_token_prefix
+        "Token"
       end
 
       # Default API endpoint from ENV or {API_ENDPOINT}
@@ -40,7 +42,7 @@ module IdbusApi
         ENV['IDBUS_API_VERSION'] || API_VERSION
       end
 
-     # Default options for Faraday::Connection
+    # Default options for Faraday::Connection
       # @return [Hash]
       def connection_options
         {
@@ -50,6 +52,8 @@ module IdbusApi
         }
       end
 
+      # Default User-Agent header string from ENV or {USER_AGENT}
+      # @return [String]
       # Default User-Agent header string from ENV or {USER_AGENT}
       # @return [String]
       def user_agent

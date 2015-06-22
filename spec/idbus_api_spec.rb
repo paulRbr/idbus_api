@@ -9,13 +9,7 @@ describe IdbusApi do
     IdbusApi.reset!
   end
 
-  it "sets defaults" do
-    IdbusApi::Configurable.keys.each do |key|
-      expect(IdbusApi.instance_variable_get(:"@#{key}")).to eq(IdbusApi::Default.send(key))
-    end
-  end
-
-  describe "::client" do
+ describe "::client" do
     it "creates an IdbusApi::Client" do
       expect(IdbusApi.client).to be_kind_of IdbusApi::Client
     end
@@ -33,7 +27,7 @@ describe IdbusApi do
   end
 
   describe ".configure" do
-    IdbusApi::Configurable.keys.each do |key|
+    Api::Configurable.keys.each do |key|
       it "sets the #{key.to_s.gsub('_', ' ')}" do
         IdbusApi.configure do |config|
           config.send("#{key}=", key)
