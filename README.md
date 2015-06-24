@@ -1,5 +1,7 @@
 # iDBUS API wrapper
 
+[![Build Status](https://travis-ci.org/paulRbr/idbus_api.svg)](https://travis-ci.org/paulRbr/idbus_api) [![Coverage Status](https://coveralls.io/repos/paulRbr/idbus_api/badge.svg)](https://coveralls.io/r/paulRbr/idbus_api)
+
 ## Description
 
 This gem wraps the new iDBUS API v1 available at https://api.idbus.com
