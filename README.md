@@ -1,6 +1,6 @@
 # iDBUS API wrapper
 
-[![Build Status](https://travis-ci.org/paulRbr/idbus_api.svg)](https://travis-ci.org/paulRbr/idbus_api) [![Coverage Status](https://coveralls.io/repos/paulRbr/idbus_api/badge.svg)](https://coveralls.io/r/paulRbr/idbus_api)
+[![Build Status](https://travis-ci.org/paulRbr/idbus_api.svg)](https://travis-ci.org/paulRbr/idbus_api) [![Coverage Status](https://coveralls.io/repos/paulRbr/idbus_api/badge.svg)](https://coveralls.io/r/paulRbr/idbus_api) [![Gem Version](https://badge.fury.io/rb/idbus_api.svg)](http://badge.fury.io/rb/idbus_api)
 
 ## Description
 
